@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>AI恐龍拼音蛋 - 幼稚園普通話小遊戲</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    body {
+      font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+      background: 
+        linear-gradient(180deg, rgba(135, 206, 235, 0.35) 0%, rgba(152, 216, 200, 0.25) 30%, rgba(245, 230, 200, 0.45) 100%),
+        url("https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1600&q=80") center/cover no-repeat fixed;
+      min-height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* 頂部分數與標題 */
+    .header {
+      width: 100%;
+      max-width: 600px;
+      padding: 12px 16px 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 20;
+    }
+
+    .title {
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: #2c3e50;
+      text-shadow: 1px 1px 0 #fff;
+    }
+
+    .score-box {
+      background: #fff;
+      border-radius: 20px;
+      padding: 6px 18px;
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #e67e22;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .score-box span {
+      color: #e74c3c;
+      font-size: 1.5rem;
+    }
+
+    .music-btn {
+      background: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 42px;
+      height: 42px;
+      font-size: 1.3rem;
+      cursor: pointer;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 8px;
+    }
+
+    .music-btn:active {
+      transform: scale(0.92);
+    }
+
+    /* 遊戲主區域 */
+    .game-area {
+      position: relative;
+      width: 100%;
+      max-width: 600px;
+      flex: 1;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 16px 16px 0 0;
+    }
+
+    /* 掉落的恐龍（可愛版） */
+    .falling-dino {
+      position: absolute;
+      top: -140px;
+      width: 130px;
+      text-align: center;
+      z-index: 10;
+      transition: none;
+      pointer-events: none;
+    }
+
+    .falling-dino .dino-emoji {
+      font-size: 78px;
+      line-height: 1;
+      filter: drop-shadow(0 6px 8px rgba(0,0,0,0.2));
+      display: block;
+      animation: cuteFloat 1.8s ease-in-out infinite;
+    }
+
+    @keyframes cuteFloat {
+      0%, 100% { transform: translateY(0) rotate(-2deg); }
+      50% { transform: translateY(-6px) rotate(2deg); }
+    }
+
+    .falling-dino .pinyin {
+      margin-top: 6px;
+      background: rgba(255,255,255,0.95);
+      border-radius: 16px;
+      padding: 5px 10px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #2c3e50;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+      white-space: nowrap;
+      border: 2px solid #ffeaa7;
+    }
+
+    /* 正確時的歡呼動畫 */
+    .falling-dino.correct {
+      animation: cheerJump 0.7s ease;
+    }
+
+    @keyframes cheerJump {
+      0%   { transform: scale(1) rotate(0deg); }
+      30%  { transform: scale(1.3) rotate(-8deg); }
+      60%  { transform: scale(1.15) rotate(8deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+
+    /* 籃子區域（竹籃子風格） */
+    .baskets {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-around;
+      padding: 0 8px 18px;
+      z-index: 15;
+    }
+
+    .basket {
+      width: 30%;
+      max-width: 160px;
+      background: linear-gradient(180deg, #f5d9a8 0%, #e8c078 40%, #d4a84b 100%);
+      border-radius: 12px 12px 6px 6px;
+      padding: 8px 6px 12px;
+      text-align: center;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.4);
+      border: 3px solid #b8860b;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* 竹編紋理效果 */
+    .basket::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 6px,
+        rgba(139, 90, 43, 0.12) 6px,
+        rgba(139, 90, 43, 0.12) 8px
+      );
+      pointer-events: none;
+      border-radius: inherit;
+    }
+
+    .basket:active {
+      transform: scale(0.95);
+    }
+
+    .basket.highlight {
+      border-color: #27ae60;
+      box-shadow: 0 0 0 4px rgba(39, 174, 96, 0.45), 0 6px 14px rgba(0,0,0,0.2);
+      transform: scale(1.06);
+    }
+
+    .basket .basket-top {
+      font-size: 28px;
+      line-height: 1;
+      margin-bottom: 2px;
+    }
+
+    .basket .basket-icon {
+      font-size: 36px;
+      line-height: 1;
+      margin-bottom: 2px;
+    }
+
+    .basket .basket-name {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #5d4037;
+      line-height: 1.3;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* 提示訊息 */
+    .message {
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255,255,255,0.95);
+      padding: 14px 28px;
+      border-radius: 30px;
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: #e74c3c;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+      z-index: 30;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      white-space: nowrap;
+    }
+
+    .message.show {
+      opacity: 1;
+    }
+
+    .message.success {
+      color: #27ae60;
+    }
+
+    /* 開始 / 結束畫面 */
+    .start-screen, .end-screen {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.94);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 50;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .start-screen h1, .end-screen h1 {
+      font-size: 2rem;
+      color: #2c3e50;
+      margin-bottom: 8px;
+    }
+
+    .start-screen p, .end-screen p {
+      font-size: 1.15rem;
+      color: #555;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .end-screen .big-score {
+      font-size: 2.4rem;
+      font-weight: bold;
+      color: #e67e22;
+      margin: 10px 0 20px;
+    }
+
+    .start-btn, .restart-btn {
+      background: linear-gradient(135deg, #f39c12, #e67e22);
+      color: white;
+      border: none;
+      padding: 14px 40px;
+      font-size: 1.4rem;
+      font-weight: bold;
+      border-radius: 40px;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(230, 126, 34, 0.4);
+      transition: transform 0.15s;
+    }
+
+    .start-btn:active, .restart-btn:active {
+      transform: scale(0.96);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* 底部說明 */
+    .hint {
+      font-size: 0.95rem;
+      color: #555;
+      padding: 6px 12px 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="title">🦖 AI恐龍拼音蛋</div>
+    <div style="display:flex; align-items:center;">
+      <div class="score-box">分數 <span id="score">0</span></div>
+      <button class="music-btn" id="musicBtn" title="背景音樂">🔊</button>
+    </div>
+  </div>
+
+  <div class="game-area" id="gameArea">
+    <!-- 掉落的恐龍會動態產生在這裡 -->
+
+    <!-- 三個竹籃子 -->
+    <div class="baskets">
+      <div class="basket" data-name="霸王龍" id="basket0">
+        <div class="basket-top">🧺</div>
+        <div class="basket-icon">🦖</div>
+        <div class="basket-name">霸王龍</div>
+      </div>
+      <div class="basket" data-name="三角龍" id="basket1">
+        <div class="basket-top">🧺</div>
+        <div class="basket-icon">🦕</div>
+        <div class="basket-name">三角龍</div>
+      </div>
+      <div class="basket" data-name="長頸龍" id="basket2">
+        <div class="basket-top">🧺</div>
+        <div class="basket-icon">🦕</div>
+        <div class="basket-name">長頸龍</div>
+      </div>
+    </div>
+
+    <!-- 提示訊息 -->
+    <div class="message" id="message"></div>
+  </div>
+
+  <div class="hint">點擊正確的籃子接住恐龍吧！</div>
+
+  <!-- 開始畫面 -->
+  <div class="start-screen" id="startScreen">
+    <h1>🦖 AI恐龍拼音蛋</h1>
+    <p style="font-size:1.25rem; font-weight:bold; color:#2c3e50; margin-bottom:12px;">
+      遊戲規則
+    </p>
+    <p>
+      根據恐龍的拼音，<br>
+      將它放進正確的竹籃子裡！<br><br>
+      點對了就得 20 分<br>
+      得到 100 分就勝利喔～
+    </p>
+    <button class="start-btn" id="startBtn">開始遊戲</button>
+  </div>
+
+  <!-- 結束畫面（100分） -->
+  <div class="end-screen hidden" id="endScreen">
+    <h1>🎉 恭喜你！</h1>
+    <p>你已經成功幫助AI恐龍了！</p>
+    <div class="big-score">得分：<span id="finalScore">100</span></div>
+    <p>真是太棒了～</p>
+    <button class="restart-btn" id="restartBtn">再玩一次</button>
+  </div>
+
+  <script>
+    // ========== 遊戲資料 ==========
+    const dinosaurs = [
+      { name: "霸王龍", pinyin: "bà wáng lóng", emoji: "🦖" },
+      { name: "三角龍", pinyin: "sān jiǎo lóng", emoji: "🦕" },
+      { name: "長頸龍", pinyin: "cháng jǐng lóng", emoji: "🦕" }
+    ];
+
+    // ========== 遊戲狀態 ==========
+    let score = 0;
+    let isPlaying = false;
+    let currentDino = null;          // 目前掉落中的恐龍元素
+    let currentDinoData = null;      // 目前恐龍的資料
+    let fallTimer = null;
+    let canClick = true;
+
+    // DOM
+    const gameArea = document.getElementById("gameArea");
+    const scoreEl = document.getElementById("score");
+    const messageEl = document.getElementById("message");
+    const startScreen = document.getElementById("startScreen");
+    const endScreen = document.getElementById("endScreen");
+    const startBtn = document.getElementById("startBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const finalScoreEl = document.getElementById("finalScore");
+    const baskets = document.querySelectorAll(".basket");
+
+    // ========== 音效（使用 Web Audio API 產生簡單聲音） ==========
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let musicOn = true;
+    let bgmNodes = [];
+
+    function playDing() {
+      // 正確：輕快叮咚
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1320, audioCtx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.3);
+    }
+
+    function playRoar() {
+      // 掉到地上：低沉恐龍叫聲（簡化版）
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.4);
+      gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.5);
+    }
+
+    function playWrong() {
+      // 錯誤提示音
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.2);
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.25);
+    }
+
+    // ========== 歡樂森林風背景音樂（Web Audio 環境音） ==========
+    function startBGM() {
+      stopBGM();
+      if (!musicOn) return;
+
+      // 柔和低頻 pad（森林氛圍）
+      const pad = audioCtx.createOscillator();
+      const padGain = audioCtx.createGain();
+      const padFilter = audioCtx.createBiquadFilter();
+      pad.type = "sine";
+      pad.frequency.value = 110;
+      padFilter.type = "lowpass";
+      padFilter.frequency.value = 400;
+      padGain.gain.value = 0.04;
+      pad.connect(padFilter);
+      padFilter.connect(padGain);
+      padGain.connect(audioCtx.destination);
+      pad.start();
+      bgmNodes.push(pad, padGain);
+
+      // 第二層柔和音
+      const pad2 = audioCtx.createOscillator();
+      const pad2Gain = audioCtx.createGain();
+      pad2.type = "triangle";
+      pad2.frequency.value = 165;
+      pad2Gain.gain.value = 0.025;
+      pad2.connect(pad2Gain);
+      pad2Gain.connect(audioCtx.destination);
+      pad2.start();
+      bgmNodes.push(pad2, pad2Gain);
+
+      // 偶爾的高音（像鳥叫／樹葉）
+      function chirp() {
+        if (!musicOn || !isPlaying) return;
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.type = "sine";
+        const freq = 800 + Math.random() * 1200;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(freq * 1.3, audioCtx.currentTime + 0.15);
+        g.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.06, audioCtx.currentTime + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.3);
+        osc.connect(g);
+        g.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.35);
+        setTimeout(chirp, 1800 + Math.random() * 3500);
+      }
+      setTimeout(chirp, 1200);
+    }
+
+    function stopBGM() {
+      bgmNodes.forEach(n => {
+        try { n.stop && n.stop(); } catch(e){}
+        try { n.disconnect && n.disconnect(); } catch(e){}
+      });
+      bgmNodes = [];
+    }
+
+    // ========== 顯示提示訊息 ==========
+    function showMessage(text, isSuccess = false) {
+      messageEl.textContent = text;
+      messageEl.className = "message show" + (isSuccess ? " success" : "");
+      setTimeout(() => {
+        messageEl.classList.remove("show");
+      }, 1200);
+    }
+
+    // ========== 遊戲結束（100分） ==========
+    function endGame() {
+      isPlaying = false;
+      stopBGM();
+      if (fallTimer) {
+        cancelAnimationFrame(fallTimer);
+        fallTimer = null;
+      }
+      if (currentDino) {
+        currentDino.remove();
+        currentDino = null;
+      }
+      finalScoreEl.textContent = score;
+      endScreen.classList.remove("hidden");
+    }
+
+    // ========== 產生一隻掉落恐龍 ==========
+    function spawnDinosaur() {
+      if (!isPlaying) return;
+
+      // 清除上一隻（如果還在）
+      if (currentDino) {
+        currentDino.remove();
+        currentDino = null;
+      }
+
+      // 隨機選一隻
+      currentDinoData = dinosaurs[Math.floor(Math.random() * dinosaurs.length)];
+
+      // 建立元素
+      const dino = document.createElement("div");
+      dino.className = "falling-dino";
+      dino.innerHTML = `
+        <span class="dino-emoji">${currentDinoData.emoji}</span>
+        <div class="pinyin">${currentDinoData.pinyin}</div>
+      `;
+
+      // 隨機水平位置（避開太邊邊）
+      const areaWidth = gameArea.clientWidth;
+      const dinoWidth = 110;
+      const x = 30 + Math.random() * (areaWidth - dinoWidth - 60);
+      dino.style.left = x + "px";
+
+      gameArea.appendChild(dino);
+      currentDino = dino;
+      canClick = true;
+
+      // 開始掉落動畫（約 7.5 秒到達底部，更適合 5 歲節奏）
+      const fallDuration = 7500; // 毫秒（已調慢）
+      const startTime = performance.now();
+      const startTop = -140;
+      const endTop = gameArea.clientHeight - 170; // 籃子上方一點
+
+      function fall(now) {
+        if (!currentDino || currentDino !== dino) return;
+
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / fallDuration, 1);
+        const currentTop = startTop + (endTop - startTop) * progress;
+        dino.style.top = currentTop + "px";
+
+        if (progress < 1) {
+          fallTimer = requestAnimationFrame(fall);
+        } else {
+          // 掉到地上（沒被接住）
+          playRoar();
+          showMessage("恐龍掉到地上了～");
+          dino.remove();
+          currentDino = null;
+          // 稍等一下再產生下一隻
+          setTimeout(spawnDinosaur, 900);
+        }
+      }
+
+      fallTimer = requestAnimationFrame(fall);
+    }
+
+    // ========== 點擊籃子判斷 ==========
+    function handleBasketClick(e) {
+      if (!isPlaying || !currentDino || !canClick) return;
+
+      const basket = e.currentTarget;
+      const basketName = basket.dataset.name;
+
+      canClick = false; // 防止連點
+
+      // 停止掉落
+      if (fallTimer) {
+        cancelAnimationFrame(fallTimer);
+        fallTimer = null;
+      }
+
+      if (basketName === currentDinoData.name) {
+        // ===== 正確 =====
+        score += 20;
+        scoreEl.textContent = score;
+        playDing();
+        showMessage("✓ 太棒了！+20分", true);
+
+        // 恐龍開心跳一下
+        currentDino.classList.add("correct");
+
+        // 籃子高亮
+        basket.classList.add("highlight");
+        setTimeout(() => basket.classList.remove("highlight"), 600);
+
+        // 檢查是否達到 100 分結束遊戲
+        if (score >= 100) {
+          setTimeout(() => {
+            if (currentDino) {
+              currentDino.remove();
+              currentDino = null;
+            }
+            endGame();
+          }, 800);
+          return;
+        }
+
+        // 稍後移除恐龍並產生下一隻
+        setTimeout(() => {
+          if (currentDino) {
+            currentDino.remove();
+            currentDino = null;
+          }
+          setTimeout(spawnDinosaur, 600);
+        }, 700);
+
+      } else {
+        // ===== 錯誤（不扣分，正向鼓勵）=====
+        playWrong();
+        showMessage("× 再試試看喔～");
+
+        // 讓恐龍繼續慢慢掉一點點，然後重新可以點
+        canClick = true;
+
+        // 重新啟動掉落（從目前位置繼續）
+        const currentTop = parseFloat(currentDino.style.top) || 0;
+        const areaHeight = gameArea.clientHeight;
+        const remaining = Math.max(areaHeight - 170 - currentTop, 1200);
+        const startTime = performance.now();
+        const startTop = currentTop;
+        const endTop = areaHeight - 170;
+
+        function continueFall(now) {
+          if (!currentDino) return;
+          const elapsed = now - startTime;
+          const progress = Math.min(elapsed / remaining, 1);
+          const top = startTop + (endTop - startTop) * progress;
+          currentDino.style.top = top + "px";
+
+          if (progress < 1) {
+            fallTimer = requestAnimationFrame(continueFall);
+          } else {
+            playRoar();
+            showMessage("恐龍掉到地上了～");
+            currentDino.remove();
+            currentDino = null;
+            setTimeout(spawnDinosaur, 900);
+          }
+        }
+        fallTimer = requestAnimationFrame(continueFall);
+      }
+    }
+
+    // ========== 綁定事件 ==========
+    baskets.forEach(b => b.addEventListener("click", handleBasketClick));
+    // 支援觸控
+    baskets.forEach(b => b.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      handleBasketClick(e);
+    }, { passive: false }));
+
+    function startGame() {
+      // 必須在使用者互動後才能播放聲音
+      if (audioCtx.state === "suspended") {
+        audioCtx.resume();
+      }
+      startScreen.classList.add("hidden");
+      endScreen.classList.add("hidden");
+      isPlaying = true;
+      score = 0;
+      scoreEl.textContent = "0";
+      startBGM();
+      setTimeout(spawnDinosaur, 500);
+    }
+
+    startBtn.addEventListener("click", startGame);
+    restartBtn.addEventListener("click", startGame);
+
+    // 音樂開關
+    const musicBtn = document.getElementById("musicBtn");
+    musicBtn.addEventListener("click", () => {
+      musicOn = !musicOn;
+      musicBtn.textContent = musicOn ? "🔊" : "🔇";
+      if (musicOn && isPlaying) {
+        if (audioCtx.state === "suspended") audioCtx.resume();
+        startBGM();
+      } else {
+        stopBGM();
+      }
+    });
+
+    // 防止頁面捲動
+    document.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
+  </script>
+</body>
+</html>
